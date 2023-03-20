@@ -1,13 +1,16 @@
 package ru.samsung.itacademy.mdev.mediastoreimageexample
 
 import android.Manifest
+import android.content.ContentResolver
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
@@ -65,28 +68,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun fetchImagesAndShowResult() {
         val stringBuilder = StringBuilder()
+        val limit = 3
         val projection = arrayOf( // media-database-columns-to-retrieve
                 MediaStore.Images.ImageColumns.DISPLAY_NAME,
                 MediaStore.Images.ImageColumns.DATE_MODIFIED
         )
-        val selection = null // sql-where-clause-with-placeholder-variables
+       // val selection = null // sql-where-clause-with-placeholder-variables
+        val selection = createSelectionBundle(limit)
         val selectionArgs = null // values-of-placeholder-variables
         val sortOrder =
-                "${MediaStore.Images.ImageColumns.DATE_MODIFIED} DESC LIMIT 20" // sql-order-by-clause
+                "${MediaStore.Images.ImageColumns.DATE_MODIFIED} DESC LIMIT $limit" // sql-order-by-clause
         applicationContext.contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection,
                 selection,
-                selectionArgs,
-                sortOrder
+                null
         )?.use { cursor ->
             val nameColumn =
                     cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DISPLAY_NAME)
             val dateModifiedColumn =
                     cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DATE_MODIFIED)
-Log.d("RRR","1231231")
+
             while (cursor.moveToNext()) {
                 Log.d("RRR",stringBuilder.toString())
                 stringBuilder.append(cursor.getString(nameColumn)).append("\n")
@@ -97,6 +102,13 @@ Log.d("RRR","1231231")
         }
     }
 
+
+    // https://stackoverflow.com/questions/66280961/contentresolver-query-method-throws-invalid-token-limit-error
+    fun createSelectionBundle(
+        limit: Int = 20
+    ): Bundle = Bundle().apply {
+        putInt(ContentResolver.QUERY_ARG_LIMIT, limit)
+    }
     companion object {
         const val TAG = "MainActivity"
         const val REQ_IMAGES = 0
